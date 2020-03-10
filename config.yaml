@@ -1,0 +1,21 @@
+options:
+  image:
+    type: string
+    default: k8s.gcr.io/kubernetes-zookeeper:1.0-3.4.10
+    description: The docker image to install.
+  client-port:
+    description: Zookeeper client port
+    type: int
+    default: 2181
+  server-port:
+    description: Zookeeper server port
+    type: int
+    default: 2888
+  leader-election-port:
+    description: Zookeeper leader-election port
+    type: int
+    default: 3888
+  num-units:
+    description: Number of units
+    type: int
+    default: 1
