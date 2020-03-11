@@ -15,27 +15,26 @@ from ops.model import (
     ModelError,
 )
 
+from interface_zookeeper import ZookeeperClientEvents
+
 
 class ZookeeperCharm(CharmBase):
+    on = ZookeeperClientEvents()
     state = StoredState()
 
     def __init__(self, *args):
         super().__init__(*args)
-        # An example of setting charm state
-        # that's persistent across events
+        
         self.state.set_default(is_started=False)
+
+        self.zookeeper = None
 
         if not self.state.is_started:
             self.state.is_started = True
-
-        # Register all of the events we want to observe
-        for event in (
-            # Charm events
-            self.on.config_changed,
-            self.on.start,
-            self.on.upgrade_charm,
-        ):
-            self.framework.observe(event, self)
+        
+        self.framework.observe(self.on.config_changed, self)
+        self.framework.observe(self.on.start, self)
+        self.framework.observe(self.on.upgrade_charm, self)
 
     def _apply_spec(self, spec):
         # Only apply the spec if this unit is a leader.
@@ -106,6 +105,17 @@ class ZookeeperCharm(CharmBase):
         self._apply_spec(new_pod_spec)
 
         unit.status = ActiveStatus()
+
+        host = self.framework.model.app.name
+        config = self.framework.model.config
+
+        zookeeper_relation = self.model.get_relation("zookeeper")
+        zookeeper_data = zookeeper_relation.data[self.model.app]
+        zookeeper_data["host"] = host
+        zookeeper_data["port"] = config["client-port"]
+        zookeeper_data["rest_port"] = config["client-port"]
+
+        self.on.zookeeper_available.emit()
 
     def on_upgrade_charm(self, event):
         """Upgrade the charm."""
